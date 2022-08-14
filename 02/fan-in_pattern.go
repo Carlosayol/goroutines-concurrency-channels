@@ -61,6 +61,7 @@ func read(file string) (<-chan []string, error) {
 func merge1(cs ...<-chan []string) <-chan []string {
 	var wg sync.WaitGroup
 	out := make(chan []string)
+
 	send := func(c <-chan []string) {
 		for n := range c {
 			out <- n
@@ -76,6 +77,38 @@ func merge1(cs ...<-chan []string) <-chan []string {
 
 	go func() {
 		wg.Wait()
+
+		close(out)
+	}()
+
+	return out
+}
+
+// this merge works the same as merge1, but uses a buffered channel instead of the sync package
+func merge2(cs ...<-chan []string) <-chan []string {
+	chans := len(cs)
+	wait := make(chan struct{}, chans)
+	out := make(chan []string)
+
+	send := func(c <-chan []string) {
+		defer func() { wait <- struct{}{} }()
+
+		for n := range c {
+			out <- n
+		}
+	}
+
+	for _, c := range cs {
+		go send(c)
+	}
+
+	go func() {
+		for range wait {
+			chans--
+			if chans == 0 {
+				break
+			}
+		}
 
 		close(out)
 	}()
