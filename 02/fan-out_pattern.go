@@ -10,7 +10,7 @@ import (
 func main() {
 	ch1, err := read("file3.csv")
 	if err != nil {
-		panic(fmt.Errorf("Coundld not read file %v", err))
+		panic(fmt.Errorf("Could not read file %v", err))
 	}
 
 	br1 := breakup("1", ch1)
